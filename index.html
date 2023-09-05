@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Recession Predictor</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* Additional CSS for result message and warning */
+        #prediction-result {
+            margin-top: 10px;
+        }
+        
+        .warning {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Recession Predictor</h1>
+        </header>
+        <form>
+            <div class="input-group">
+                <label for="payrolls-change">Payrolls 3-month vs. 12-month Change (as a decimal):</label>
+                <input type="number" step="0.00001" id="payrolls-change" name="payrolls-change" required
+                    placeholder="Enter the value here">
+            </div>
+            <div class="input-group">
+                <label for="unemployment-rate-change">Unemployment Rate 12-month Change (as a decimal):</label>
+                <input type="number" step="0.00001" id="unemployment-rate-change" name="unemployment-rate-change" required
+                    placeholder="Enter the value here">
+            </div>
+            <div class="input-group">
+                <label for="sp500-change">S&P 500 12-month Change (as a decimal):</label>
+                <input type="number" step="0.00001" id="sp500-change" name="sp500-change" required
+                    placeholder="Enter the value here">
+            </div>
+            <div class="input-group">
+                <label for="sp500-3mo-vs-12mo">S&P 500 3-month vs. 12-month Change (as a decimal):</label>
+                <input type="number" step="0.00001" id="sp500-3mo-vs-12mo" name="sp500-3mo-vs-12mo" required
+                    placeholder="Enter the value here">
+            </div>
+            <div class="input-group">
+                <label for="ipi-3mo-pct-change-annualized">IPI 3-month pct Change Annualized (as a decimal):</label>
+                <input type="number" step="0.00001" id="ipi-3mo-pct-change-annualized" name="ipi-3mo-pct-change-annualized" required
+                    placeholder="Enter the value here">
+            </div>
+            <button type="button" class="predict-button" onclick="predict()">Predict</button>
+            <!-- Warning message div -->
+            <div id="warning-message" class="warning"></div>
+        </form>
+        <!-- Result message aligned below the button -->
+        <div id="prediction-result"></div>
+    </div>
+    <script>
+        function predict() {
+            const payrollsChange = parseFloat(document.getElementById('payrolls-change').value);
+            const unemploymentRateChange = parseFloat(document.getElementById('unemployment-rate-change').value);
+            const sp500Change = parseFloat(document.getElementById('sp500-change').value);
+            const sp5003moVs12mo = parseFloat(document.getElementById('sp500-3mo-vs-12mo').value);
+            const ipi3moPctChangeAnnualized = parseFloat(document.getElementById('ipi-3mo-pct-change-annualized').value);
+
+            // Check if any input is empty or inappropriate
+            if (isNaN(payrollsChange) || isNaN(unemploymentRateChange) || isNaN(sp500Change) || isNaN(sp5003moVs12mo) || isNaN(ipi3moPctChangeAnnualized)) {
+                const warningMessage = document.getElementById('warning-message');
+                warningMessage.textContent = 'Please enter valid values in all fields.';
+                return; // Stop further processing
+            }
+
+            const inputData = {
+                'features': [payrollsChange, unemploymentRateChange, sp500Change, sp5003moVs12mo, ipi3moPctChangeAnnualized]
+            };
+
+            // Clear the warning message
+            const warningMessage = document.getElementById('warning-message');
+            warningMessage.textContent = '';
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(inputData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const predictionResult = document.getElementById('prediction-result');
+                const prediction = data.prediction;
+
+                if (prediction === 0) {
+                    predictionResult.textContent = 'Recession is Not Likely';
+                } else if (prediction === 1) {
+                    predictionResult.textContent = 'Recession is Likely';
+                } else {
+                    predictionResult.textContent = 'Prediction Error';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+
+</html>
